@@ -1,0 +1,82 @@
+sequenceDiagram
+    participant C1 as Signal Client A
+    participant LB as Load Balancer
+    participant HTTP as HTTP Server
+    participant AUTH as AccountAuthenticator
+    participant CTRL as MessageController
+    participant SENDER as MessageSender
+    participant MMGR as MessagesManager
+    participant REDIS as Redis Cluster
+    participant DYNAMO as DynamoDB
+    participant PUSHMGR as PushNotificationManager
+    participant APN as APNSender
+    participant FCM as FcmSender
+    participant C2 as Signal Client B
+    participant WS as WebSocket Server
+    participant CONN as ConnectionManager
+
+    Note over C1,CONN: Message Send Flow
+    
+    C1->>+LB: POST /v1/messages/{destination}
+    LB->>+HTTP: Route request
+    HTTP->>+AUTH: Authenticate user credentials
+    AUTH->>AUTH: Validate basic auth token
+    AUTH->>AUTH: Check device registration
+    AUTH-->>-HTTP: AuthenticatedDevice
+    
+    HTTP->>+CTRL: sendMessage(envelope, timestamp, urgent)
+    CTRL->>CTRL: Validate message size & format
+    CTRL->>+SENDER: sendMessages(destination, messages, registrationIds)
+    
+    SENDER->>SENDER: Validate device list
+    SENDER->>SENDER: Check message content length
+    SENDER->>+MMGR: insert(accountId, messagesByDeviceId)
+    
+    MMGR->>+REDIS: Check if recipient is online
+    REDIS-->>-MMGR: Client presence status
+    MMGR->>+DYNAMO: Store message in queue
+    DYNAMO-->>-MMGR: Message stored
+    MMGR-->>-SENDER: Map<DeviceId, ClientPresent>
+    
+    loop For each destination device
+        alt Client is offline
+            SENDER->>+PUSHMGR: sendNewMessageNotification(account, deviceId, urgent)
+            PUSHMGR->>PUSHMGR: Determine push platform
+            
+            alt iOS Device
+                PUSHMGR->>+APN: Send push notification
+                APN->>APN: Format APNS payload
+                APN-->>-PUSHMGR: Notification sent
+            else Android Device
+                PUSHMGR->>+FCM: Send push notification
+                FCM->>FCM: Format FCM payload
+                FCM-->>-PUSHMGR: Notification sent
+            end
+            PUSHMGR-->>-SENDER: Push notification dispatched
+        else Client is online
+            SENDER->>+CONN: Notify connected client
+            CONN->>+WS: Send real-time message
+            WS->>+C2: WebSocket message delivery
+            C2-->>-WS: Message received acknowledgment
+            WS-->>-CONN: Delivery confirmed
+            CONN-->>-SENDER: Real-time delivery complete
+        end
+    end
+    
+    SENDER-->>-CTRL: Message processing complete
+    CTRL-->>-HTTP: SendMessageResponse
+    HTTP-->>-LB: HTTP 200 OK
+    LB-->>-C1: Message sent confirmation
+
+    Note over C2: Message Retrieval (if offline)
+    C2->>+WS: WebSocket connection established
+    WS->>+CONN: Register client connection
+    CONN->>+MMGR: getMessagesForDevice(accountId, deviceId)
+    MMGR->>+DYNAMO: Retrieve queued messages
+    DYNAMO-->>-MMGR: Message list
+    MMGR-->>-CONN: Pending messages
+    CONN->>+WS: Deliver queued messages
+    WS->>+C2: Batch message delivery
+    C2-->>-WS: Messages received
+    WS-->>-CONN: Delivery confirmed
+    CONN-->>-WS: Processing complete

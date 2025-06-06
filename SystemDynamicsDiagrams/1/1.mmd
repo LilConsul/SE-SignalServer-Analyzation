@@ -1,0 +1,118 @@
+%%{init: {
+  'theme': 'dark',
+  'themeVariables': {
+    'primaryColor': '#1f2937',
+    'primaryTextColor': '#f9fafb',
+    'primaryBorderColor': '#374151',
+    'lineColor': '#6b7280',
+    'secondaryColor': '#374151',
+    'tertiaryColor': '#4b5563',
+    'background': '#111827',
+    'mainBkg': '#1f2937',
+    'secondBkg': '#374151',
+    'tertiaryBkg': '#4b5563'
+  }
+}}%%
+sequenceDiagram
+    participant C1 as 📱 Signal Client A
+    participant LB as ⚖️ Load Balancer
+    participant HTTP as 🌐 HTTP Server
+    participant AUTH as 🔐 Auth Service
+    participant CTRL as 🎮 Message Controller
+    participant SENDER as 📤 Message Sender
+    participant MMGR as 💬 Messages Manager
+    participant REDIS as 🔴 Redis Cache
+    participant DYNAMO as 🗃️ DynamoDB
+    participant PUSHMGR as 🔔 Push Manager
+    participant APN as 🍎 Apple Push
+    participant FCM as 🤖 Firebase FCM
+    participant C2 as 📱 Signal Client B
+    participant WS as 🔌 WebSocket Server
+    participant CONN as 🔗 Connection Manager
+
+    rect rgb(30, 41, 59)
+        Note over C1,CONN: 📨 Message Send Flow
+    end
+
+    C1->>+LB: POST /v1/messages/{destination}
+    Note right of C1: User sends encrypted message
+
+    LB->>+HTTP: Route to available server
+    HTTP->>+AUTH: Validate credentials
+
+    rect rgb(59, 41, 30)
+        AUTH->>AUTH: Check auth token
+        AUTH->>AUTH: Verify device registration
+    end
+
+    AUTH-->>-HTTP: ✅ Authenticated Device
+
+    HTTP->>+CTRL: Process message envelope
+    Note right of CTRL: Validate size & format
+
+    CTRL->>+SENDER: Send to destination(s)
+
+    rect rgb(30, 59, 41)
+        SENDER->>SENDER: Validate recipients
+        SENDER->>SENDER: Check content limits
+    end
+
+    SENDER->>+MMGR: Store message
+
+    MMGR->>+REDIS: Check recipient status
+    REDIS-->>-MMGR: 🟢 Online / 🔴 Offline
+
+    MMGR->>+DYNAMO: Persist to message queue
+    DYNAMO-->>-MMGR: ✅ Stored successfully
+    MMGR-->>-SENDER: Delivery status map
+
+    rect rgb(59, 30, 59)
+        Note over SENDER,FCM: Push Notification Logic
+
+        loop For each recipient device
+            alt 🔴 Recipient is offline
+                SENDER->>+PUSHMGR: Send push notification
+
+                alt 🍎 iOS Device
+                    PUSHMGR->>+APN: APNS notification
+                    APN-->>-PUSHMGR: ✅ Sent
+                else 🤖 Android Device
+                    PUSHMGR->>+FCM: FCM notification
+                    FCM-->>-PUSHMGR: ✅ Sent
+                end
+
+                PUSHMGR-->>-SENDER: 🔔 Push dispatched
+
+            else 🟢 Recipient is online
+                SENDER->>+CONN: Real-time delivery
+                CONN->>+WS: WebSocket message
+                WS->>+C2: 📨 Live message
+                C2-->>-WS: ✅ Received
+                WS-->>-CONN: ✅ Confirmed
+                CONN-->>-SENDER: ⚡ Real-time complete
+            end
+        end
+    end
+
+    SENDER-->>-CTRL: ✅ Processing complete
+    CTRL-->>-HTTP: Success response
+    HTTP-->>-LB: 200 OK
+    LB-->>-C1: ✅ Message sent
+
+    rect rgb(30, 59, 30)
+        Note over C2,DYNAMO: 📥 Message Retrieval (Offline Messages)
+    end
+
+    C2->>+WS: 🔌 Connect to server
+    WS->>+CONN: Register connection
+
+    CONN->>+MMGR: Request pending messages
+    MMGR->>+DYNAMO: Query message queue
+    DYNAMO-->>-MMGR: 📦 Queued messages
+    MMGR-->>-CONN: Message batch
+
+    CONN->>+WS: Deliver batch
+    WS->>+C2: 📨 Multiple messages
+    C2-->>-WS: ✅ All received
+    WS-->>-CONN: ✅ Batch delivered
+    CONN-->>-WS: 🎯 Sync complete

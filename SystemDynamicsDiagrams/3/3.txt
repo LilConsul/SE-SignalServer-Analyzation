@@ -1,0 +1,147 @@
+sequenceDiagram
+    participant MAIN as Main Application
+    participant WSS as WhisperServerService
+    participant ENV as Environment Manager
+    participant LIFECYCLE as Lifecycle Manager
+    participant CONFIG as Configuration Manager
+    participant DYNCONFIG as DynamicConfiguration
+    participant REDIS as Redis Clusters
+    participant DYNAMO as DynamoDB
+    participant EXEC as Executor Services
+    participant SERVICES as Business Services
+    participant CONTROLLERS as Controllers
+    participant SERVERS as Server Infrastructure
+    participant HEALTH as Health Checks
+    participant METRICS as Metrics System
+
+    Note over MAIN,METRICS: System Initialization Phase
+    
+    MAIN->>+WSS: run(configuration, environment)
+    WSS->>+CONFIG: Load configuration files
+    CONFIG->>CONFIG: Parse YAML configuration
+    CONFIG->>CONFIG: Validate configuration parameters
+    CONFIG-->>-WSS: Configuration loaded
+    
+    WSS->>+ENV: Initialize environment
+    ENV->>+LIFECYCLE: Create lifecycle manager
+    LIFECYCLE-->>-ENV: Lifecycle manager ready
+    ENV-->>-WSS: Environment initialized
+    
+    Note over WSS,METRICS: External Dependencies Setup
+    
+    WSS->>+REDIS: Initialize Redis clusters
+    REDIS->>REDIS: Connect to messages cluster
+    REDIS->>REDIS: Connect to push scheduler cluster
+    REDIS->>REDIS: Connect to rate limiters cluster
+    REDIS->>REDIS: Connect to pubsub cluster
+    REDIS-->>-WSS: Redis clusters connected
+    
+    WSS->>+DYNAMO: Initialize DynamoDB connections
+    DYNAMO->>DYNAMO: Configure account tables
+    DYNAMO->>DYNAMO: Configure keys tables
+    DYNAMO->>DYNAMO: Configure messages tables
+    DYNAMO-->>-WSS: DynamoDB connections established
+    
+    Note over WSS,METRICS: Thread Pool and Executor Setup
+    
+    WSS->>+EXEC: Create executor services
+    EXEC->>EXEC: Create main thread pool (HTTP)
+    EXEC->>EXEC: Create async thread pool (background)
+    EXEC->>EXEC: Create scheduled executor (periodic tasks)
+    EXEC->>EXEC: Create WebSocket executor
+    EXEC->>EXEC: Create message delivery executor
+    EXEC->>EXEC: Create push notification executor
+    EXEC-->>-WSS: Executor services ready
+    
+    Note over WSS,METRICS: Business Services Initialization
+    
+    WSS->>+SERVICES: Initialize core services
+    SERVICES->>SERVICES: Create AccountsManager
+    SERVICES->>SERVICES: Create MessagesManager
+    SERVICES->>SERVICES: Create KeysManager
+    SERVICES->>SERVICES: Create PushNotificationManager
+    SERVICES->>SERVICES: Create MessageSender
+    SERVICES->>SERVICES: Create AuthenticationServices
+    SERVICES-->>-WSS: Core services initialized
+    
+    WSS->>+DYNCONFIG: Initialize dynamic configuration
+    DYNCONFIG->>DYNCONFIG: Connect to configuration backend
+    DYNCONFIG->>DYNCONFIG: Load feature flags
+    DYNCONFIG->>DYNCONFIG: Setup configuration polling
+    DYNCONFIG-->>-WSS: Dynamic configuration active
+    
+    Note over WSS,METRICS: Controller and API Setup
+    
+    WSS->>+CONTROLLERS: Register REST controllers
+    CONTROLLERS->>CONTROLLERS: Register MessageController
+    CONTROLLERS->>CONTROLLERS: Register AccountController
+    CONTROLLERS->>CONTROLLERS: Register KeysController
+    CONTROLLERS->>CONTROLLERS: Register ProfileController
+    CONTROLLERS->>CONTROLLERS: Register DeviceController
+    CONTROLLERS-->>-WSS: Controllers registered
+    
+    Note over WSS,METRICS: Server Infrastructure Startup
+    
+    WSS->>+SERVERS: Start server infrastructure
+    SERVERS->>SERVERS: Configure HTTP server (Jetty)
+    SERVERS->>SERVERS: Configure WebSocket server
+    SERVERS->>SERVERS: Configure gRPC servers
+    SERVERS->>SERVERS: Setup authentication filters
+    SERVERS->>SERVERS: Configure request filters
+    SERVERS-->>-WSS: Servers configured
+    
+    Note over WSS,METRICS: Monitoring and Health Checks
+    
+    WSS->>+METRICS: Initialize metrics collection
+    METRICS->>METRICS: Setup Micrometer registry
+    METRICS->>METRICS: Configure metric exporters
+    METRICS->>METRICS: Register custom metrics
+    METRICS-->>-WSS: Metrics system active
+    
+    WSS->>+HEALTH: Setup health checks
+    HEALTH->>HEALTH: Register database health checks
+    HEALTH->>HEALTH: Register Redis health checks
+    HEALTH->>HEALTH: Register external service checks
+    HEALTH-->>-WSS: Health monitoring active
+    
+    Note over WSS,METRICS: Final Startup Phase
+    
+    WSS->>+LIFECYCLE: Start managed objects
+    LIFECYCLE->>REDIS: Start Redis connections
+    LIFECYCLE->>DYNAMO: Start DynamoDB connections  
+    LIFECYCLE->>EXEC: Start executor services
+    LIFECYCLE->>SERVICES: Start business services
+    LIFECYCLE->>SERVERS: Start HTTP/WebSocket/gRPC servers
+    LIFECYCLE-->>-WSS: All services started
+    
+    WSS->>+HEALTH: Perform startup health check
+    HEALTH->>REDIS: Verify Redis connectivity
+    HEALTH->>DYNAMO: Verify DynamoDB connectivity
+    HEALTH->>SERVICES: Verify service health
+    HEALTH-->>-WSS: System healthy
+    
+    WSS-->>-MAIN: Application startup complete
+    
+    Note over MAIN,METRICS: Runtime Operation
+    
+    loop During normal operation
+        HEALTH->>REDIS: Periodic health checks
+        HEALTH->>DYNAMO: Periodic health checks
+        HEALTH->>SERVICES: Monitor service health
+        METRICS->>METRICS: Collect and export metrics
+        DYNCONFIG->>DYNCONFIG: Poll for configuration changes
+        LIFECYCLE->>LIFECYCLE: Monitor managed object health
+    end
+    
+    Note over MAIN,METRICS: Graceful Shutdown
+    
+    MAIN->>+WSS: Shutdown signal received
+    WSS->>+LIFECYCLE: Initiate graceful shutdown
+    LIFECYCLE->>SERVERS: Stop accepting new requests
+    LIFECYCLE->>SERVERS: Complete in-flight requests
+    LIFECYCLE->>SERVICES: Stop business services
+    LIFECYCLE->>EXEC: Shutdown executor services
+    LIFECYCLE->>REDIS: Close Redis connections
+    LIFECYCLE->>DYNAMO: Close DynamoDB connections
+    LIFECYCLE-->>-WSS: Shutdown complete
+    WSS-->>-MAIN: Application stopped
