@@ -1,0 +1,99 @@
+sequenceDiagram
+    participant CLIENT as Signal Client
+    participant LB as Load Balancer
+    participant HTTP as HTTP Server
+    participant REGCTRL as RegistrationController
+    participant PHONEMGR as PhoneVerificationTokenManager
+    participant TWILIO as Twilio Service
+    participant ACCMGR as AccountsManager
+    participant DYNAMO as DynamoDB
+    participant KEYMGR as KeysManager
+    participant CACHE as Redis Cache
+    participant REGLOCK as RegistrationLockManager
+    participant SVR2 as SecureValueRecovery2
+    participant AUTH as AccountAuthenticator
+
+    Note over CLIENT,AUTH: Phase 1: Phone Number Verification
+    
+    CLIENT->>+LB: POST /v1/accounts/sms/code/{phone}
+    LB->>+HTTP: Route request
+    HTTP->>+REGCTRL: requestVerificationCode(phoneNumber)
+    REGCTRL->>+PHONEMGR: sendVerificationCode(phoneNumber)
+    PHONEMGR->>PHONEMGR: Generate verification code
+    PHONEMGR->>+CACHE: Store code with TTL
+    CACHE-->>-PHONEMGR: Code cached
+    PHONEMGR->>+TWILIO: Send SMS verification
+    TWILIO-->>-PHONEMGR: SMS sent
+    PHONEMGR-->>-REGCTRL: Verification initiated
+    REGCTRL-->>-HTTP: Code sent response
+    HTTP-->>-LB: HTTP 200 OK
+    LB-->>-CLIENT: Verification code sent
+
+    Note over CLIENT,AUTH: Phase 2: Account Registration
+    
+    CLIENT->>+LB: PUT /v1/accounts/code/{code}
+    LB->>+HTTP: Route registration request
+    HTTP->>+REGCTRL: verifyAccount(code, accountAttributes)
+    REGCTRL->>+PHONEMGR: verifyCode(phoneNumber, code)
+    PHONEMGR->>+CACHE: Validate stored code
+    CACHE-->>-PHONEMGR: Code validation result
+    PHONEMGR-->>-REGCTRL: Code verified
+    
+    alt Registration Lock Enabled
+        REGCTRL->>+REGLOCK: checkRegistrationLock(phoneNumber)
+        REGLOCK->>+SVR2: verifyPin(hashedPin)
+        SVR2-->>-REGLOCK: PIN verification result
+        alt PIN verification failed
+            REGLOCK-->>REGCTRL: Registration locked
+            REGCTRL-->>HTTP: HTTP 423 Locked
+            HTTP-->>LB: Registration blocked
+            LB-->>CLIENT: Account locked error
+        else PIN verification successful
+            REGLOCK-->>REGCTRL: Registration allowed
+        end
+        Note over REGLOCK: Registration lock check complete
+    end
+    
+    REGCTRL->>+ACCMGR: create(phoneNumber, accountAttributes)
+    ACCMGR->>ACCMGR: Generate account UUID
+    ACCMGR->>ACCMGR: Create primary device
+    ACCMGR->>+KEYMGR: storeIdentityKey(accountId, identityKey)
+    KEYMGR->>+DYNAMO: Store identity keys
+    DYNAMO-->>-KEYMGR: Keys stored
+    KEYMGR-->>-ACCMGR: Identity keys registered
+    
+    ACCMGR->>+DYNAMO: Store account record
+    DYNAMO-->>-ACCMGR: Account created
+    ACCMGR->>+CACHE: Cache account data
+    CACHE-->>-ACCMGR: Account cached
+    ACCMGR-->>-REGCTRL: Account creation complete
+    
+    REGCTRL-->>-HTTP: RegistrationResponse(uuid, deviceId)
+    HTTP-->>-LB: HTTP 200 OK
+    LB-->>-CLIENT: Registration successful
+
+    Note over CLIENT,AUTH: Phase 3: Device Authentication
+    
+    CLIENT->>+LB: GET /v1/accounts/whoami (with auth header)
+    LB->>+HTTP: Route authenticated request
+    HTTP->>+AUTH: authenticate(basicCredentials)
+    AUTH->>AUTH: Parse username (UUID.deviceId)
+    AUTH->>+ACCMGR: getByAccountIdentifier(uuid)
+    ACCMGR->>+CACHE: Check account cache
+    CACHE-->>-ACCMGR: Cache miss
+    ACCMGR->>+DYNAMO: Retrieve account
+    DYNAMO-->>-ACCMGR: Account data
+    ACCMGR->>+CACHE: Update cache
+    CACHE-->>-ACCMGR: Cache updated
+    ACCMGR-->>-AUTH: Account found
+    
+    AUTH->>AUTH: Validate device auth token
+    AUTH->>AUTH: Update last seen timestamp
+    AUTH->>+ACCMGR: updateDeviceLastSeen(account, device)
+    ACCMGR->>+DYNAMO: Update device record
+    DYNAMO-->>-ACCMGR: Device updated
+    ACCMGR-->>-AUTH: Device timestamp updated
+    AUTH-->>-HTTP: AuthenticatedDevice
+    
+    HTTP-->>-LB: Account info response
+    LB-->>-CLIENT: Authentication successful
