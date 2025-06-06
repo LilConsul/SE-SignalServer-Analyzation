@@ -1,0 +1,149 @@
+---
+config:
+  direction: TB
+  class:
+    hideMembers: false
+---
+classDiagram
+  direction TB
+
+  %% Top-level Authentication & Security components
+  class AccountAuthenticator {
+    +authenticate(credentials)
+    +validateDeviceId(account, deviceId)
+    -verifyCredentials(credentials)
+  }
+
+  class RegistrationLockVerificationManager {
+    +verifyRegistrationLock(accountAttributes)
+    +attestRegistrationLockSecret(svr1, svr2)
+    -validateRegistrationLockCredentials(credential)
+  }
+
+  class PhoneVerificationTokenManager {
+    +generateToken(phoneNumber, accountIdentifier)
+    +verifyToken(phoneNumber, token)
+    +validateTokenExpirationTime(token)
+  }
+
+  class TurnCredentialsManager {
+    +generateCredentials(account)
+    +validateCredentials(credentials)
+    -rotateTurnSecret()
+  }
+
+  class CertificateGenerator {
+    +createFor(account, deviceId)
+    -getSigningCertificate()
+    -generateSignedCertificate(uuid, deviceId)
+  }
+
+  %% Zero-Knowledge proofs components
+  class ServerZkAuthOperations {
+    +issueAuthCredential(uuid, redemptionTime)
+    +verifyAuthCredential(credential)
+    -generateAuthCredential(uuid, redemptionTime)
+  }
+
+  class ServerZkProfileOperations {
+    +createProfileKeyCredentialPresentation(presentation)
+    +verifyProfileKeyCredentialPresentation(presentation)
+    -validateCredentialRequest(request)
+  }
+
+  class ServerSecretParams {
+    +generate()
+    +getPublicParams()
+    -deriveKeys()
+  }
+
+  %% Service Credential components
+  class ExternalServiceCredentialsGenerator {
+    +generateFor(account)
+    -getEncryptedUserId(account)
+    -generateHmac(userId, today)
+  }
+
+  class DisconnectionRequestManager {
+    +processDisconnectionRequest(account, device)
+    +handleClientDisconnection(account, deviceId)
+    -enforceDisconnection(connection)
+  }
+
+  class RegistrationCaptchaManager {
+    +validateCaptcha(token, challenge)
+    +verifyCaptchaFromHeader(headers)
+    -checkForRateLimit(account)
+  }
+
+  class WebSocketAuthenticator {
+    +authenticate(accountIdentifier, token)
+    +upgradeToWebSocket(connection, account)
+    -validateWebSocketConnection(connection)
+  }
+
+  %% Authentication data model
+  class Account {
+    +uuid
+    +e164
+    +identityKey
+    +registrationLock
+    +recoveryPassword
+    +multiDeviceCapable
+  }
+
+  class Device {
+    +id
+    +name
+    +authToken
+    +pushTimestamp
+    +fetchesMessages
+    +lastSeen
+    +authenticated
+  }
+
+  class ClientConnection {
+    +connectionId
+    +userAgent
+    +accountUuid
+    +deviceId
+    +connectionStatus
+    -establishedTimestamp
+  }
+
+  %% Security and Cryptography components
+  class CredentialsCipher {
+    +encrypt(plaintext, key)
+    +decrypt(ciphertext, key)
+    -generateIv()
+  }
+
+  class GcmSender {
+    +sendNotification(deviceToken, message)
+    -buildGcmPayload(message)
+  }
+
+  class ApnSender {
+    +sendNotification(deviceToken, message, isVoip)
+    -buildPayload(message, isVoip)
+  }
+
+  %% Connections and Relationships
+  AccountAuthenticator --> Account : authenticates
+  Account "1" *-- "*" Device : contains
+  RegistrationLockVerificationManager --> Account : verifies
+  PhoneVerificationTokenManager --> Account : validates access for
+  TurnCredentialsManager --> Account : generates TURN credentials for
+  CertificateGenerator --> Account : issues certificates for
+  ServerZkAuthOperations --> ServerSecretParams : uses
+  ServerZkProfileOperations --> ServerSecretParams : uses
+  ExternalServiceCredentialsGenerator --> Account : generates external credentials for
+  DisconnectionRequestManager --> ClientConnection : manages
+  ClientConnection --> Account : belongs to
+  ClientConnection --> Device : associated with
+  WebSocketAuthenticator --> AccountAuthenticator : uses
+  WebSocketAuthenticator --> ClientConnection : validates
+  RegistrationCaptchaManager --> Account : protects registration of
+  GcmSender --> Device : sends notifications to
+  ApnSender --> Device : sends notifications to
+
