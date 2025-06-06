@@ -5,145 +5,125 @@ config:
     hideMembers: false
 ---
 classDiagram
-  direction RL
+    direction RL
+%% Top-level Authentication & Security components
+    class AccountAuthenticator {
+        +authenticate(credentials)
+        +validateDeviceId(account, deviceId)
+        -verifyCredentials(credentials)
+    }
 
-  %% Top-level Authentication & Security components
-  class AccountAuthenticator {
-    +authenticate(credentials)
-    +validateDeviceId(account, deviceId)
-    -verifyCredentials(credentials)
-  }
+    class RegistrationLockVerificationManager {
+        +verifyRegistrationLock(accountAttributes)
+        +attestRegistrationLockSecret(svr1, svr2)
+        -validateRegistrationLockCredentials(credential)
+    }
 
-  class RegistrationLockVerificationManager {
-    +verifyRegistrationLock(accountAttributes)
-    +attestRegistrationLockSecret(svr1, svr2)
-    -validateRegistrationLockCredentials(credential)
-  }
+    class PhoneVerificationTokenManager {
+        +generateToken(phoneNumber, accountIdentifier)
+        +verifyToken(phoneNumber, token)
+        +validateTokenExpirationTime(token)
+    }
 
-  class PhoneVerificationTokenManager {
-    +generateToken(phoneNumber, accountIdentifier)
-    +verifyToken(phoneNumber, token)
-    +validateTokenExpirationTime(token)
-  }
+    class TurnCredentialsManager {
+        +generateCredentials(account)
+        +validateCredentials(credentials)
+        -rotateTurnSecret()
+    }
 
-  class TurnCredentialsManager {
-    +generateCredentials(account)
-    +validateCredentials(credentials)
-    -rotateTurnSecret()
-  }
+    class CertificateGenerator {
+        +createFor(account, deviceId)
+        -getSigningCertificate()
+        -generateSignedCertificate(uuid, deviceId)
+    }
 
-  class CertificateGenerator {
-    +createFor(account, deviceId)
-    -getSigningCertificate()
-    -generateSignedCertificate(uuid, deviceId)
-  }
+%% Service Credential components
+    class ExternalServiceCredentialsGenerator {
+        +generateFor(account)
+        -getEncryptedUserId(account)
+        -generateHmac(userId, today)
+    }
 
-  %% Zero-Knowledge proofs components
-  class ServerZkAuthOperations {
-    +issueAuthCredential(uuid, redemptionTime)
-    +verifyAuthCredential(credential)
-    -generateAuthCredential(uuid, redemptionTime)
-  }
+    class DisconnectionRequestManager {
+        +processDisconnectionRequest(account, device)
+        +handleClientDisconnection(account, deviceId)
+        -enforceDisconnection(connection)
+    }
 
-  class ServerZkProfileOperations {
-    +createProfileKeyCredentialPresentation(presentation)
-    +verifyProfileKeyCredentialPresentation(presentation)
-    -validateCredentialRequest(request)
-  }
+    class RegistrationCaptchaManager {
+        +validateCaptcha(token, challenge)
+        +verifyCaptchaFromHeader(headers)
+        -checkForRateLimit(account)
+    }
 
-  class ServerSecretParams {
-    +generate()
-    +getPublicParams()
-    -deriveKeys()
-  }
+    class WebSocketAuthenticator {
+        +authenticate(accountIdentifier, token)
+        +upgradeToWebSocket(connection, account)
+        -validateWebSocketConnection(connection)
+    }
 
-  %% Service Credential components
-  class ExternalServiceCredentialsGenerator {
-    +generateFor(account)
-    -getEncryptedUserId(account)
-    -generateHmac(userId, today)
-  }
+%% Authentication data model
+    class Account {
+        +uuid
+        +e164
+        +identityKey
+        +registrationLock
+        +recoveryPassword
+        +multiDeviceCapable
+    }
 
-  class DisconnectionRequestManager {
-    +processDisconnectionRequest(account, device)
-    +handleClientDisconnection(account, deviceId)
-    -enforceDisconnection(connection)
-  }
+    class Device {
+        +id
+        +name
+        +authToken
+        +pushTimestamp
+        +fetchesMessages
+        +lastSeen
+        +authenticated
+    }
 
-  class RegistrationCaptchaManager {
-    +validateCaptcha(token, challenge)
-    +verifyCaptchaFromHeader(headers)
-    -checkForRateLimit(account)
-  }
+    class ClientConnection {
+        +connectionId
+        +userAgent
+        +accountUuid
+        +deviceId
+        +connectionStatus
+        -establishedTimestamp
+    }
 
-  class WebSocketAuthenticator {
-    +authenticate(accountIdentifier, token)
-    +upgradeToWebSocket(connection, account)
-    -validateWebSocketConnection(connection)
-  }
+%% Security and Cryptography components
+    class CredentialsCipher {
+        +encrypt(plaintext, key)
+        +decrypt(ciphertext, key)
+        -generateIv()
+    }
 
-  %% Authentication data model
-  class Account {
-    +uuid
-    +e164
-    +identityKey
-    +registrationLock
-    +recoveryPassword
-    +multiDeviceCapable
-  }
+    class GcmSender {
+        +sendNotification(deviceToken, message)
+        -buildGcmPayload(message)
+    }
 
-  class Device {
-    +id
-    +name
-    +authToken
-    +pushTimestamp
-    +fetchesMessages
-    +lastSeen
-    +authenticated
-  }
+    class ApnSender {
+        +sendNotification(deviceToken, message, isVoip)
+        -buildPayload(message, isVoip)
+    }
 
-  class ClientConnection {
-    +connectionId
-    +userAgent
-    +accountUuid
-    +deviceId
-    +connectionStatus
-    -establishedTimestamp
-  }
+%% Connections and Relationships
+    AccountAuthenticator --> Account: authenticates
+    Account "1" *-- "*" Device: contains
+    RegistrationLockVerificationManager --> Account: verifies
+    PhoneVerificationTokenManager --> Account: validates access for
+    TurnCredentialsManager --> Account: generates TURN credentials for
+    CertificateGenerator --> Account: issues certificates for
+    ExternalServiceCredentialsGenerator --> Account: generates external credentials for
+    DisconnectionRequestManager --> ClientConnection: manages
+    ClientConnection --> Account: belongs to
+    ClientConnection --> Device: associated with
+    WebSocketAuthenticator --> AccountAuthenticator: uses
+    WebSocketAuthenticator --> ClientConnection: validates
+    RegistrationCaptchaManager --> Account: protects registration of
+    GcmSender --> Device: sends notifications to
+    ApnSender --> Device: sends notifications to
+    DisconnectionRequestManager --> ClientConnection: manages
 
-  %% Security and Cryptography components
-  class CredentialsCipher {
-    +encrypt(plaintext, key)
-    +decrypt(ciphertext, key)
-    -generateIv()
-  }
-
-  class GcmSender {
-    +sendNotification(deviceToken, message)
-    -buildGcmPayload(message)
-  }
-
-  class ApnSender {
-    +sendNotification(deviceToken, message, isVoip)
-    -buildPayload(message, isVoip)
-  }
-
-  %% Connections and Relationships
-  AccountAuthenticator --> Account : authenticates
-  Account "1" *-- "*" Device : contains
-  RegistrationLockVerificationManager --> Account : verifies
-  PhoneVerificationTokenManager --> Account : validates access for
-  TurnCredentialsManager --> Account : generates TURN credentials for
-  CertificateGenerator --> Account : issues certificates for
-  ServerZkAuthOperations --> ServerSecretParams : uses
-  ServerZkProfileOperations --> ServerSecretParams : uses
-  ExternalServiceCredentialsGenerator --> Account : generates external credentials for
-  DisconnectionRequestManager --> ClientConnection : manages
-  ClientConnection --> Account : belongs to
-  ClientConnection --> Device : associated with
-  WebSocketAuthenticator --> AccountAuthenticator : uses
-  WebSocketAuthenticator --> ClientConnection : validates
-  RegistrationCaptchaManager --> Account : protects registration of
-  GcmSender --> Device : sends notifications to
-  ApnSender --> Device : sends notifications to
 

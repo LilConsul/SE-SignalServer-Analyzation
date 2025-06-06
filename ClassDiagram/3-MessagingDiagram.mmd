@@ -5,164 +5,155 @@ config:
     hideEmptyMembersBox: false
 ---
 classDiagram
-  direction LR
+    direction LR
+%% Client-facing message components
+    class MessageController {
+        +send(message, account, device)
+        +sendMultiRecipient(messages, account)
+        +getMessages(account, device)
+        +deleteMessage(account, messageGuid)
+        -validateMessageContent(message)
+    }
 
-  %% Client-facing message components
-  class MessageController {
-    +send(message, account, device)
-    +sendMultiRecipient(messages, account)
-    +getMessages(account, device)
-    +deleteMessage(account, messageGuid)
-    -validateMessageContent(message)
-  }
+%% Core message processing
+    class MessagesManager {
+        +persist(source, destination, timestamp, content)
+        +storeMultiRecipientMessage(source, destinations, timestamp, content)
+        +getMessagesForDevice(account, device)
+        +clear(account)
+        +delete(account, messageGuid)
+        -calculateMessageExpiration(message)
+        -optimizeMessageDelivery(messages, recipients)
+    }
 
-  %% Core message processing
-  class MessagesManager {
-    +persist(source, destination, timestamp, content)
-    +storeMultiRecipientMessage(source, destinations, timestamp, content)
-    +getMessagesForDevice(account, device)
-    +clear(account)
-    +delete(account, messageGuid)
-    -calculateMessageExpiration(message)
-    -optimizeMessageDelivery(messages, recipients)
-  }
+    class MessagePersister {
+        +persistMessages()
+        +persistQueuesToDB()
+        -selectExpiredMessagesForRemoval()
+        -scheduleMessagePersistence()
+    }
 
-  class MessagePersister {
-    +persistMessages()
-    +persistQueuesToDB()
-    -selectExpiredMessagesForRemoval()
-    -scheduleMessagePersistence()
-  }
+    class MessageSender {
+        +sendMessage(account, device, message)
+        +sendNewMessageNotification(account, device)
+        -prepareMessageForDelivery(message)
+        -handleEncryptionFailures(errors)
+        -retryFailedMessages(account, messageID)
+    }
 
-  class MessageSender {
-    +sendMessage(account, device, message)
-    +sendNewMessageNotification(account, device)
-    -prepareMessageForDelivery(message)
-    -handleEncryptionFailures(errors)
-    -retryFailedMessages(account, messageID)
-  }
+%% Push notification services
+    class PushNotificationManager {
+        +sendNewMessageNotification(account, device)
+        +sendRateLimitChallengeNotification(account, device)
+        +sendRegistrationChallengeNotification(account, device)
+        -selectNotificationService(device)
+    }
 
-  %% Push notification services
-  class PushNotificationManager {
-    +sendNewMessageNotification(account, device)
-    +sendRateLimitChallengeNotification(account, device)
-    +sendRegistrationChallengeNotification(account, device)
-    -selectNotificationService(device)
-  }
+    class ApnSender {
+        +sendNotification(deviceToken, alert, voip)
+        +sendPayloadNotification(deviceToken, payload)
+        -buildPayload(alert, badgeCount)
+    }
 
-  class ApnSender {
-    +sendNotification(deviceToken, alert, voip)
-    +sendPayloadNotification(deviceToken, payload)
-    -buildPayload(alert, badgeCount)
-  }
+    class GcmSender {
+        +sendMessage(deviceToken, message)
+        +sendNotification(deviceToken, notification)
+        -buildGcmMessage(token, notification)
+    }
 
-  class GcmSender {
-    +sendMessage(deviceToken, message)
-    +sendNotification(deviceToken, notification)
-    -buildGcmMessage(token, notification)
-  }
+%% WebSocket message components
+    class WebSocketConnectionManager {
+        +create(account, device, client)
+        +disconnect(connection)
+        +sendMessage(account, device, message)
+        +handleAuthentication(connection, account, device)
+        -getDestinations(account, device)
+    }
 
-  %% WebSocket message components
-  class WebSocketConnectionManager {
-    +create(account, device, client)
-    +disconnect(connection)
-    +sendMessage(account, device, message)
-    +handleAuthentication(connection, account, device)
-    -getDestinations(account, device)
-  }
+    class WebSocketConnection {
+        +sendMessage(message)
+        +sendControl(message)
+        +close(statusCode, reason)
+        -processAcknowledgment(ack)
+    }
 
-  class WebSocketConnection {
-    +sendMessage(message)
-    +sendControl(message)
-    +close(statusCode, reason)
-    -processAcknowledgment(ack)
-  }
+    class WebSocketSessionManager {
+        +getSession(connectionId)
+        +addSession(session)
+        +removeSession(connectionId)
+        -monitorActiveSessions()
+    }
 
-  class WebSocketSessionManager {
-    +getSession(connectionId)
-    +addSession(session)
-    +removeSession(connectionId)
-    -monitorActiveSessions()
-  }
+%% Storage and caching
+    class MessageCache {
+        +store(destinationUuid, destinationDevice, message)
+        +get(destinationUuid, destinationDevice)
+        +remove(destinationUuid, destinationDevice, messageUuid)
+        -buildCacheKey(uuid, deviceId)
+    }
 
-  %% Storage and caching
-  class MessageCache {
-    +store(destinationUuid, destinationDevice, message)
-    +get(destinationUuid, destinationDevice)
-    +remove(destinationUuid, destinationDevice, messageUuid)
-    -buildCacheKey(uuid, deviceId)
-  }
+    class Messages {
+        +store(message)
+        +load(account, device)
+        +remove(messageUuid)
+        +removeAll(account)
+        -serializeMessage(message)
+    }
 
-  class Messages {
-    +store(message)
-    +load(account, device)
-    +remove(messageUuid)
-    +removeAll(account)
-    -serializeMessage(message)
-  }
+    class RedisClusterManager {
+        +getCluster()
+        +useCluster(function)
+        +withClient(function)
+        -buildClientConfiguration()
+    }
 
-  class RedisClusterManager {
-    +getCluster()
-    +useCluster(function)
-    +withClient(function)
-    -buildClientConfiguration()
-  }
+%% Message Data Model
+    class Message {
+        +uuid
+        +sender
+        +sentTimestamp
+        +serverTimestamp
+        +content
+        +destination
+        +destinationDeviceId
+        -expiresAt
+    }
 
-  %% Message Data Model
-  class Message {
-    +uuid
-    +sender
-    +sentTimestamp
-    +serverTimestamp
-    +content
-    +destination
-    +destinationDeviceId
-    -expiresAt
-  }
+    class MultiRecipientMessage {
+        +uuid
+        +sender
+        +sentTimestamp
+        +content
+        +destinations: List
+        +commonPayload
+        -recipientSpecificPayload: Map
+    }
 
-  class MultiRecipientMessage {
-    +uuid
-    +sender
-    +sentTimestamp
-    +content
-    +destinations: List
-    +commonPayload
-    -recipientSpecificPayload: Map
-  }
+    class Envelope {
+        +type
+        +sourceDevice
+        +destinationUuid
+        +destinationDeviceId
+        +content
+        +server_timestamp
+        -sealed_sender
+    }
 
-  class Envelope {
-    +type
-    +sourceDevice
-    +destinationUuid
-    +destinationDeviceId
-    +content
-    +server_timestamp
-    -sealed_sender
-  }
-
-  %% Connection flows
-  MessageController --> MessagesManager : requests message handling
-  MessagesManager --> MessageCache : stores messages in
-  MessagesManager --> Messages : persists messages to
-  MessagesManager --> MessageSender : delivers via
-
-  MessageSender --> WebSocketConnectionManager : sends via active websocket
-  MessageSender --> PushNotificationManager : sends notification if device offline
-
-  PushNotificationManager --> ApnSender : uses for iOS devices
-  PushNotificationManager --> GcmSender : uses for Android devices
-
-  WebSocketConnectionManager o-- WebSocketConnection : manages
-  WebSocketConnectionManager --> WebSocketSessionManager : uses
-
-  MessageCache --> RedisClusterManager : uses
-
-  WebSocketConnection --> Message : transmits
-
-  MessagesManager --> MessagePersister : schedules persistence
-
-  MessageSender --> MultiRecipientMessage : optimizes with
-
-  Message --|> Envelope : serialized as
-  MultiRecipientMessage --* Message : contains multiple
+%% Connection flows
+    MessageController --> MessagesManager: requests message handling
+    MessagesManager --> MessageCache: stores messages in
+    MessagesManager --> Messages: persists messages to
+    MessagesManager --> MessageSender: delivers via
+    MessageSender --> WebSocketConnectionManager: sends via active websocket
+    MessageSender --> PushNotificationManager: sends notification if device offline
+    PushNotificationManager --> ApnSender: uses for iOS devices
+    PushNotificationManager --> GcmSender: uses for Android devices
+    WebSocketConnectionManager o-- WebSocketConnection: manages
+    WebSocketConnectionManager --> WebSocketSessionManager: uses
+    MessageCache --> RedisClusterManager: uses
+    WebSocketConnection --> Message: transmits
+    MessagesManager --> MessagePersister: schedules persistence
+    MessageSender --> MultiRecipientMessage: optimizes with
+    Message --|> Envelope: serialized as
+    MultiRecipientMessage --* Message: contains multiple
 
