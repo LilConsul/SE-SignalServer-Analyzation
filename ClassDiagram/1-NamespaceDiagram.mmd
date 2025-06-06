@@ -90,11 +90,6 @@ classDiagram
     KeyTransparency
   }
 
-  class Experimental {
-    FeatureFlags
-    ABTesting
-  }
-
   %% Functional Components - Infrastructure Layer
   class Storage {
     Accounts
@@ -152,7 +147,6 @@ classDiagram
   Business_Layer *-- Authentication : contains
   Business_Layer *-- Push : contains
   Business_Layer *-- Security : contains
-  Business_Layer *-- Experimental : contains
 
   %% Infrastructure Layer Composition
   Infrastructure_Layer *-- Storage : contains
