@@ -1,3 +1,18 @@
+%%{init: {
+  'theme': 'dark',
+  'themeVariables': {
+    'primaryColor': '#1f2937',
+    'primaryTextColor': '#f9fafb',
+    'primaryBorderColor': '#374151',
+    'lineColor': '#6b7280',
+    'secondaryColor': '#374151',
+    'tertiaryColor': '#4b5563',
+    'background': '#111827',
+    'mainBkg': '#1f2937',
+    'secondBkg': '#374151',
+    'tertiaryBkg': '#4b5563'
+  }
+}}%%
 sequenceDiagram
     participant C1 as 📱 Signal Client A
     participant LB as ⚖️ Load Balancer
@@ -15,7 +30,7 @@ sequenceDiagram
     participant WS as 🔌 WebSocket Server
     participant CONN as 🔗 Connection Manager
 
-    rect rgb(240, 248, 255)
+    rect rgb(30, 41, 59)
         Note over C1,CONN: 📨 Message Send Flow
     end
 
@@ -25,7 +40,7 @@ sequenceDiagram
     LB->>+HTTP: Route to available server
     HTTP->>+AUTH: Validate credentials
 
-    rect rgb(255, 248, 240)
+    rect rgb(59, 41, 30)
         AUTH->>AUTH: Check auth token
         AUTH->>AUTH: Verify device registration
     end
@@ -37,7 +52,7 @@ sequenceDiagram
 
     CTRL->>+SENDER: Send to destination(s)
 
-    rect rgb(248, 255, 248)
+    rect rgb(30, 59, 41)
         SENDER->>SENDER: Validate recipients
         SENDER->>SENDER: Check content limits
     end
@@ -51,7 +66,7 @@ sequenceDiagram
     DYNAMO-->>-MMGR: ✅ Stored successfully
     MMGR-->>-SENDER: Delivery status map
 
-    rect rgb(255, 248, 255)
+    rect rgb(59, 30, 59)
         Note over SENDER,FCM: Push Notification Logic
 
         loop For each recipient device
@@ -84,7 +99,7 @@ sequenceDiagram
     HTTP-->>-LB: 200 OK
     LB-->>-C1: ✅ Message sent
 
-    rect rgb(240, 255, 240)
+    rect rgb(30, 59, 30)
         Note over C2,DYNAMO: 📥 Message Retrieval (Offline Messages)
     end
 

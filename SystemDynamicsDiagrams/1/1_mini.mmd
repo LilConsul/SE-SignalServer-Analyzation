@@ -1,3 +1,18 @@
+%%{init: {
+  'theme': 'dark',
+  'themeVariables': {
+    'primaryColor': '#1f2937',
+    'primaryTextColor': '#f9fafb',
+    'primaryBorderColor': '#374151',
+    'lineColor': '#6b7280',
+    'secondaryColor': '#374151',
+    'tertiaryColor': '#4b5563',
+    'background': '#111827',
+    'mainBkg': '#1f2937',
+    'secondBkg': '#374151',
+    'tertiaryBkg': '#4b5563'
+  }
+}}%%
 sequenceDiagram
     participant C1 as 📱 Client A
     participant LB as ⚖️ LB
@@ -9,7 +24,7 @@ sequenceDiagram
     participant PUSH as 🔔 Push
     participant C2 as 📱 Client B
 
-    rect rgb(240, 248, 255)
+    rect rgb(30, 41, 59)
         Note over C1,C2: 📨 Message Flow
     end
 
@@ -42,7 +57,7 @@ sequenceDiagram
     API-->>-LB: 200 OK
     LB-->>-C1: ✅ Sent
 
-    rect rgb(240, 255, 240)
+    rect rgb(30, 59, 30)
         Note over C2,DB: 📥 Offline Message Sync
     end
 
