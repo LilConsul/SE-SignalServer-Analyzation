@@ -1,18 +1,3 @@
-%%{init: {
-  'theme': 'dark',
-  'themeVariables': {
-    'primaryColor': '#1f2937',
-    'primaryTextColor': '#f9fafb',
-    'primaryBorderColor': '#374151',
-    'lineColor': '#6b7280',
-    'secondaryColor': '#374151',
-    'tertiaryColor': '#4b5563',
-    'background': '#111827',
-    'mainBkg': '#1f2937',
-    'secondBkg': '#374151',
-    'tertiaryBkg': '#4b5563'
-  }
-}}%%
 sequenceDiagram
     participant C1 as 📱 SignalServiceMessageSender
     participant LB as ⚖️ HAProxy/ELB
@@ -24,7 +9,7 @@ sequenceDiagram
     participant PUSH as 🔔 PushNotificationManager
     participant C2 as 📱 SignalServiceMessageReceiver
 
-    rect rgb(30, 41, 59)
+    rect rgb(240, 248, 255)
         Note over C1,C2: 📨 HTTP/2 Message Delivery Pipeline
     end
 
@@ -64,7 +49,7 @@ sequenceDiagram
     API-->>-LB: 200 OK + timing headers
     LB-->>-C1: Response + request latency
 
-    rect rgb(30, 59, 30)
+    rect rgb(240, 255, 240)
         Note over C2,DYNAMO: 📥 Message Queue Synchronization
     end
 
