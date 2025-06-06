@@ -1,0 +1,53 @@
+sequenceDiagram
+    participant C1 as 📱 Client A
+    participant LB as ⚖️ LB
+    participant API as 🌐 API
+    participant AUTH as 🔐 Auth
+    participant MSG as 📤 Messaging
+    participant CACHE as 🔴 Cache
+    participant DB as 🗃️ DB
+    participant PUSH as 🔔 Push
+    participant C2 as 📱 Client B
+
+    rect rgb(240, 248, 255)
+        Note over C1,C2: 📨 Message Flow
+    end
+
+    C1->>+LB: POST /v1/messages
+    LB->>+API: Route request
+    API->>+AUTH: Validate 🔐
+    AUTH-->>-API: ✅ Valid
+
+    API->>+MSG: Process message
+    MSG->>MSG: Validate & format
+
+    par Check recipient status
+        MSG->>+CACHE: Check online status
+        CACHE-->>-MSG: 🟢/🔴 Status
+    and Store message
+        MSG->>+DB: Store message
+        DB-->>-MSG: ✅ Stored
+    end
+
+    alt 🔴 Recipient offline
+        MSG->>+PUSH: Send notification
+        PUSH->>PUSH: 🍎 APNS / 🤖 FCM
+        PUSH-->>-MSG: 🔔 Sent
+    else 🟢 Recipient online
+        MSG->>C2: ⚡ Real-time delivery
+        C2-->>MSG: ✅ Received
+    end
+
+    MSG-->>-API: ✅ Complete
+    API-->>-LB: 200 OK
+    LB-->>-C1: ✅ Sent
+
+    rect rgb(240, 255, 240)
+        Note over C2,DB: 📥 Offline Message Sync
+    end
+
+    C2->>+API: 🔌 Connect
+    API->>+DB: Get pending messages
+    DB-->>-API: 📦 Messages
+    API->>C2: 📨 Batch delivery
+    C2-->>API: ✅ Synced
