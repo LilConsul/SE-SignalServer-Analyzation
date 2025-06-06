@@ -21,10 +21,6 @@ classDiagram
     Main application namespace
   }
 
-  class signal {
-    Extension namespace
-  }
-
   %% Service Layers
   class API_Layer {
     REST API endpoints
@@ -140,8 +136,6 @@ classDiagram
 
   %% Core Relationships
   WhisperServerService --> textsecuregcm : bootstraps
-  WhisperServerService --> signal : initializes extensions
-  textsecuregcm --> signal : provides core functionality to
 
   %% Layered Architecture
   textsecuregcm --> API_Layer : exposes
