@@ -92,12 +92,6 @@ classDiagram
     }
 
 %% Security and Cryptography components
-    class CredentialsCipher {
-        +encrypt(plaintext, key)
-        +decrypt(ciphertext, key)
-        -generateIv()
-    }
-
     class GcmSender {
         +sendNotification(deviceToken, message)
         -buildGcmPayload(message)
@@ -125,5 +119,3 @@ classDiagram
     GcmSender --> Device: sends notifications to
     ApnSender --> Device: sends notifications to
     DisconnectionRequestManager --> ClientConnection: manages
-
-
