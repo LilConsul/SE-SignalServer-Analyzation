@@ -1,14 +1,4 @@
 # Signal Server Requirements Specification Document
-## World Machine Model Analysis
-
-### Document Information
-- **Project**: Signal Server Implementation
-- **Version**: 1.0
-- **Date**: June 2025
-- **Author**: Requirements Engineering Team
-- **Repository**: https://github.com/signalapp/Signal-Server
-
----
 
 ## 1. World (Environmental Assumptions)
 
