@@ -27,11 +27,11 @@ The service operates continuously with global user base expectations for minimal
 The Requirements define what the Signal Server system must accomplish to operate successfully within the World environment.
 
 ### 2.1 Core Messaging Requirements
-The system shall enable secure text message exchange between registered users with delivery confirmation mechanisms. **Success Criteria**: Message delivery success rate ≥99.9% under normal conditions, delivery confirmation within 3 seconds.
+The system shall enable secure text message exchange between registered users with delivery confirmation mechanisms. **Success Criteria**: Message delivery success rate ≥ 99.9% under normal conditions, delivery confirmation within 3 seconds.
 
 The system shall support multimedia content transmission including images, videos, audio files, and documents with appropriate file size limitations. **Success Criteria**: Media files up to 100MB shall be transmitted successfully, with progress indication for large files.
 
-The system shall provide real-time message delivery with minimal latency for active users. **Success Criteria**: Message delivery latency ≤2 seconds for real-time connections, ≤30 seconds for offline users upon reconnection.
+The system shall provide real-time message delivery with minimal latency for active users. **Success Criteria**: Message delivery latency ≤ 2 seconds for real-time connections, ≤ 30 seconds for offline users upon reconnection.
 
 ### 2.2 Privacy and Security Requirements
 All communications shall be protected through end-to-end encryption ensuring only intended recipients access message content. **Success Criteria**: Independent security audit confirms cryptographic implementation correctness, zero server-side access to plaintext messages.
@@ -41,7 +41,7 @@ The system shall implement forward secrecy protecting past communications even i
 User metadata shall be minimized to prevent traffic analysis, relationship mapping, and communication pattern identification. **Success Criteria**: Server logs contain no message content, minimal metadata retention verified through privacy audit.
 
 ### 2.3 User Management Requirements
-Users shall register using phone numbers as unique identifiers with verification through SMS or voice calls. **Success Criteria**: Registration process completes within 5 minutes, phone number verification success rate ≥95%.
+Users shall register using phone numbers as unique identifiers with verification through SMS or voice calls. **Success Criteria**: Registration process completes within 5 minutes, phone number verification success rate ≥ 95%.
 
 The system shall support user profile management including display names, profile images, and privacy settings. **Success Criteria**: Profile updates propagate to contacts within 30 seconds, privacy settings enforcement verified through testing.
 
@@ -55,11 +55,11 @@ Group administrators shall manage participants, modify settings, and control per
 Groups shall maintain forward secrecy and metadata protection equivalent to individual conversations. **Success Criteria**: Group key rotation occurs automatically, member addition/removal doesn't compromise past messages.
 
 ### 2.5 Availability and Performance Requirements
-The system shall maintain high availability with minimal service interruptions across global operations. **Success Criteria**: System uptime ≥99.95%, planned maintenance windows ≤4 hours monthly.
+The system shall maintain high availability with minimal service interruptions across global operations. **Success Criteria**: System uptime ≥ 99.95%, planned maintenance windows ≤ 4 hours monthly.
 
 The system shall scale to support growing user populations without performance degradation. **Success Criteria**: System supports 10x user growth without latency increase, horizontal scaling activates automatically.
 
-Message processing shall handle peak loads efficiently with appropriate resource utilization. **Success Criteria**: System handles 10M messages/hour, CPU utilization ≤80% during peak loads.
+Message processing shall handle peak loads efficiently with appropriate resource utilization. **Success Criteria**: System handles 10M messages/hour, CPU utilization ≤ 80% during peak loads.
 
 ### 2.6 Cross-Platform Requirements
 The system shall support multiple client platforms with consistent functionality and user experience. **Success Criteria**: Feature parity across iOS, Android, and desktop clients, synchronized user experience.
@@ -69,9 +69,9 @@ Users shall access communications across multiple devices while maintaining secu
 Device authentication shall occur securely without compromising encryption or user privacy. **Success Criteria**: Device linking uses secure protocols, authentication compromise doesn't affect other devices.
 
 ### 2.7 Infrastructure Requirements
-The system requires cloud infrastructure supporting horizontal scaling, load balancing, and geographic distribution. **Success Criteria**: Auto-scaling responds to load changes within 5 minutes, global latency ≤200ms.
+The system requires cloud infrastructure supporting horizontal scaling, load balancing, and geographic distribution. **Success Criteria**: Auto-scaling responds to load changes within 5 minutes, global latency ≤ 200ms.
 
-Database systems shall provide persistent storage with replication, backup, and encryption capabilities. **Success Criteria**: Database replication lag ≤1 second, automated backups complete successfully, encryption at rest verified.
+Database systems shall provide persistent storage with replication, backup, and encryption capabilities. **Success Criteria**: Database replication lag ≤ 1 second, automated backups complete successfully, encryption at rest verified.
 
 Monitoring and alerting systems shall provide operational visibility and proactive issue detection. **Success Criteria**: Critical alerts trigger within 30 seconds, 95% of issues detected before user impact.
 
@@ -80,7 +80,7 @@ Monitoring and alerting systems shall provide operational visibility and proacti
 The Specifications translate Requirements into concrete technical constraints and implementation guidelines.
 
 ### 3.1 Cryptographic Specifications
-End-to-end encryption shall implement Signal Protocol using Double Ratchet algorithm with X3DH key agreement. Message encryption uses AES-256-GCM with HMAC-SHA256 authentication. Key derivation follows HKDF with SHA-256. Forward secrecy maintains separate encryption keys for each message direction.
+End-to-end encryption shall implement Signal Protocol using the Double Ratchet algorithm with X3DH key agreement. Message encryption uses AES-256-GCM with HMAC-SHA256 authentication. Key derivation follows HKDF with SHA-256. Forward secrecy maintains separate encryption keys for each message direction.
 
 Sealed sender functionality prevents server identification of message senders in group communications. Cryptographic operations use vetted libraries (libsignal-protocol, BouncyCastle) with hardware security module integration where available.
 
