@@ -1,5 +1,9 @@
 # Signal Server World Model Requirements Specification
 
+## Introduction
+
+People around the world need to communicate privately and securely without worrying about governments, corporations, or malicious actors reading their personal messages, tracking their relationships, or analyzing their communication patterns. Traditional messaging services store user data, sell information to advertisers, cooperate with mass surveillance programs, and leave communications vulnerable to interception and abuse. While Signal clients handle the user interface and encryption on devices, they need a robust server infrastructure to route messages, manage user accounts, and coordinate secure communications between millions of users globally without compromising privacy. The Signal server must handle massive message volumes, maintain high availability, implement privacy-preserving protocols, and operate under constant threat from adversaries trying to compromise user security. Signal Foundation has the technical expertise, funding, and commitment to privacy needed to build and operate this critical server infrastructure at global scale.
+
 ## 1. World (Environmental Context)
 
 The World defines the external environment, constraints, and assumptions under which the Signal Server system operates.
