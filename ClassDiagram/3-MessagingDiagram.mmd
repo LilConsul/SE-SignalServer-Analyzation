@@ -137,7 +137,8 @@ classDiagram
         +content
         +server_timestamp
         -sealed_sender
-        +toEnvelope()
+		+toEnvelope()
+        +fromEvelope()
     }
 
 %% Connection flows
@@ -155,6 +156,6 @@ classDiagram
     WebSocketConnection --> Message: transmits
     MessagesManager --> MessagePersister: schedules persistence
     MessageSender --> MultiRecipientMessage: optimizes with
-    Message --|> Envelope: serialized as
+    Message -- Envelope: serialized as
     MultiRecipientMessage --* Message: contains multiple
 
