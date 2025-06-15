@@ -174,7 +174,7 @@ sequenceDiagram
     end
 ```
 
-### 2.2 👤 Account Registration with Enhanced Security
+### 2.2 👤 Account Registration
 
 ```mermaid
 sequenceDiagram
