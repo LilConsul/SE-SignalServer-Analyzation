@@ -1,9 +1,11 @@
----
-config:
-  direction: RL
-  class:
-    hideMembers: false
----
+%%{ init: {
+  "themeVariables": {
+    "fontSize": "16px",
+    "fontFamily": "monospace",
+  },
+  "class": { "useMaxWidth": true }
+} }%%
+
 classDiagram
     direction RL
 %% Top-level Authentication & Security components

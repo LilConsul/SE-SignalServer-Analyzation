@@ -1,9 +1,11 @@
----
-config:
-  direction: LR
-  class:
-    hideEmptyMembersBox: false
----
+%%{ init: {
+  "themeVariables": {
+    "fontSize": "16px",
+    "fontFamily": "monospace",
+  },
+  "class": { "useMaxWidth": true }
+} }%%
+
 classDiagram
     direction LR
 %% Client-facing message components

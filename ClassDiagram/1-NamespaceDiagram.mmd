@@ -1,9 +1,11 @@
----
-config:
-  class:
-    hideEmptyMembersBox: true
-  theme: neo
----
+%%{ init: {
+  "themeVariables": {
+    "fontSize": "16px",
+    "fontFamily": "monospace",
+  },
+  "class": { "useMaxWidth": true }
+} }%%
+
 classDiagram
     direction TB
     namespace texttextsecuregcm {
